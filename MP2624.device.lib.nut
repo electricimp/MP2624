@@ -1,9 +1,26 @@
-// I2C Controlled 4.5A Single Cell USB / Adaptor Charger 
-// with Narrow VDC Power Path Management and USB OTG
-
-// The MP2624 is a 4.5A, highly integrated,
-// switching-mode battery charger IC for singlecell
-// Li-ion or Li-polymer batteries.
+// MIT License
+//
+// Copyright (c) 2017 Electric Imp
+//
+// SPDX-License-Identifier: MIT
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
 
 
 // MP2624 CONSTANTS
@@ -109,6 +126,13 @@ const MP2624_FAULT_NTC_COLD          = 0x01;
 const MP2624_FAULT_NTC_COOL          = 0x02;
 const MP2624_FAULT_NTC_WARM          = 0x03;
 const MP2624_FAULT_NTC_HOT           = 0x04;
+
+
+// The MP2624 is a 4.5A, highly integrated,
+// switching-mode battery charger IC for singlecell
+// Li-ion or Li-polymer batteries.
+// It is an I2C Controlled 4.5A Single Cell USB / Adaptor Charger 
+// with Narrow VDC Power Path Management and USB OTG
 
 class MP2624 {
 
@@ -442,4 +466,3 @@ class MP2624 {
     }
 
 }
-

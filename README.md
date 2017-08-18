@@ -284,3 +284,7 @@ The *enableHighImpedence()* method is used to enable or disable the high impeden
 ### resetWatchdogTimer()
 
 Use the *resetWatchdogTimer()* method to prevent the watchdog timer from expiring and keep the device in host mode.
+
+## License
+
+The MP2624 library is licensed under [MIT License](./LICENSE).
