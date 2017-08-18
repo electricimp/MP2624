@@ -1,13 +1,12 @@
 # MP2624
 
-The MP2624 is a 4.5A, highly integrated, switching-mode battery charger IC for singlecell Li-ion or Li-polymer batteries. 
+The MP2624 is a 4.5A, highly integrated, switching-mode battery charger IC for singlecell Li-ion or Li-polymer batteries. It is an I2C Controlled 4.5A Single Cell USB / Adaptor Charger with Narrow VDC Power Path Management and USB OTG.
 
 **To use this library, add the following statement to the top of your device code:**
 
 ```squirrel
 #require "MP2624.device.lib.nut:1.0.0"
 ```
-
 
 ## Class Usage
 
