@@ -10,9 +10,24 @@ The MP2624 is a 4.5A, highly integrated, switching-mode battery charger IC for s
 
 ## Class Usage
 
-### Constructor: MP2624(*ic2*)
+**Please Note:** All code examples are to show how to use this driver, and are not recommended configuration settings. All settings must be based on your battery's data sheet. 
 
-The construcor takes one required parameter, a preconfigured i2c hardware object. You will need to set the clock speed for i2c before passing it into the constructor. The i2c interface on the MP2624 supports both standard mode (up to 100k bits), and fast mode (up to 400k bits).
+### Constructor: MP2624(*i2c[, addr]*)
+
+The construcor takes one required parameter *i2c*, a preconfigured i2c hardware object, and one optional parameter *addr*, the i2c address for the MP2624. If no address is passed in the default i2c address 0x4B will be used.
+
+You will need to set the clock speed for i2c before passing it into the constructor. The i2c interface on the MP2624 supports both standard mode (up to 100k bits), and fast mode (up to 400k bits).
+
+```
+squirrel
+// Configure i2c
+local i2c = hardware.i2c89;
+i2c.configure(CLOCK_SPEED_400_KHZ);
+
+// Set up charger
+local chargerAddr = 0x96;
+local charger = MP2624(i2c, chargerAddr);
+```
 
 ## Class Methods
 
@@ -20,9 +35,13 @@ The construcor takes one required parameter, a preconfigured i2c hardware object
 
 The *reset()* method will return the chip to default settings.
 
-### getSystStatusReg()
+```
+charger.reset();
+```
 
-The *getSystStatusReg()* method returns a table with the current system status values. See the tables below for each of the possible values for the following keys: [V_BUS](#v_bus-possible-values), [CHARGE](#charge-possible-values), [PPM](#ppm-possible-values), [PWR_GOOD](#pwr_good-possible-values), [THERM](#therm-possible-values), [V_SYS](#v_sys-possible-values).
+### getSysStatus()
+
+The *getSysStatus()* method returns a table with the current system status values. See the tables below for each of the possible values for the following keys: [V_BUS](#v_bus-possible-values), [CHARGE](#charge-possible-values), [PPM](#ppm-possible-values), [PWR_GOOD](#pwr_good-possible-values), [THERM](#therm-possible-values), [V_SYS](#v_sys-possible-values).
 
 #### *V_BUS* Possible Values:
 | System Status Constant               | Value | Description           |
@@ -64,10 +83,20 @@ The *getSystStatusReg()* method returns a table with the current system status v
 | MP2624_STATUS_VSYSMIN_IN_REG     | 0x00  | In VSYSMIN regulation     |
 | MP2624_STATUS_VSYSMIN_NOT_IN_REG | 0x01  | Not in VSYSMIN regulation |
 
+```
+squirrel
+// Get the current system status 
+local sysStatus = charger.getSysStatus();
 
-### getFaultReg()
+// Check for adaptor port
+if (sysStatus.V_BUS == MP2624_STATUS_V_BUS_ADAPTOR_PORT) {
+    server.log("Adaptor Port detected.");
+}
+```
 
-The *getFaultReg()* method returns a table with the current fault status. See the tables below for each of the possible values for the following keys: [WATCHDOG](#watchdog-possible-values), [OTG](#otg-possible-values), [CHARGE](#charge-possible-values), [BATTERY](#battery-possible-values), [NTC](#ntc-possible-values).
+### getFaults()
+
+The *getFaults()* method returns a table with the current fault status. See the tables below for each of the possible values for the following keys: [WATCHDOG](#watchdog-possible-values), [OTG](#otg-possible-values), [CHARGE](#charge-possible-values), [BATTERY](#battery-possible-values), [NTC](#ntc-possible-values).
 
 #### *WATCHDOG* Possible Values:
 | System Status Constant               | Value | Description               |
@@ -104,9 +133,23 @@ The *getFaultReg()* method returns a table with the current fault status. See th
 | MP2624_FAULT_NTC_WARM                | 0x01  | NTC warm    |
 | MP2624_FAULT_NTC_HOT                 | 0x02  | NTC hot     |
 
+```
+squirrel
+local faults = charger.getFaults();
+if (faults.NTC != MP2624_FAULT_NTC_NORM) {
+    server.log("NTC fault detected.");
+}
+```
+
 ### setInputVoltageRegulation(*inputVoltage*)
 
 The *setInputVoltageRegulation()* method takes one required parameter, a float *inputVoltage*, the desired input voltage in volts. Supported values range from 3.88V to 5.08V in 80mV increments. All vaules will be rounded down to the closest supported value. The method returns the actual *inputVoltage* set. The default value is 4.36V. 
+
+```
+squirrel
+local inV = charger.setInputVoltageRegulation(4.04);
+server.log(inV);
+```
 
 ### setInputCurrentLimit(*currInLimConst*)
 
@@ -123,6 +166,11 @@ The *setInputCurrentLimit()* method takes one required parameter, an input curre
 | MP2624_CURR_IN_LIMIT_2000mA   |
 | MP2624_CURR_IN_LIMIT_3000mA   |
 
+```
+squirrel
+charger.setInputCurrentLimit(MP2624_CURR_IN_LIMIT_150mA);
+```
+
 ### setChargerConfig(*modeConst*)
 
 The *setChargerConfig()* method takes one required parameter, an charger configuration mode constant. The default mode is charge battery, *MP2624_CHARGE_MODE_BATTERY*.
@@ -133,9 +181,20 @@ The *setChargerConfig()* method takes one required parameter, an charger configu
 | MP2624_CHARGE_MODE_BATTERY           |
 | MP2624_CHARGE_MODE_OTG               |
 
+```
+squirrel
+charger.setInputCurrentLimit(MP2624_CHARGE_MODE_DISABLE);
+```
+
 ### setMinSysVoltage(*minSysVoltage*)
 
 The *setMinSysVoltage()* method takes one required parameter, a float *minSysVoltage*, the desired minimum system voltage in volts. Supported values range from 3.0V to 3.07V in 0.1V increments. All vaules will be rounded down to the closest supported value. The method returns the actual *minSysVoltage* set. The default value is 3.6V.
+
+```
+squirrel
+local minV = charger.setInputCurrentLimit(3.3);
+server.log(minV);
+```
 
 ### setMaxSysVoltage(*maxVoltConst*)
 
@@ -146,9 +205,20 @@ The *setMaxSysVoltage()* method selects system regulation voltage higher than fu
 | MP2624_SYS_MAX_50mV              |
 | MP2624_SYS_MAX_100mV             |
 
+```
+squirrel
+charger.setMaxSysVoltage(MP2624_SYS_MAX_50mV);
+```
+
 ### setChargeCurrent(*chargeCurrent*)
 
 The *setChargeCurrent()* method takes one required parameter, an integer *chargeCurrent*, the desired charge current in milliamps. Supported values range from 512mA to 4544mA in 64mA increments. All vaules will be rounded down to the closest supported value. The method returns the actual *chargeCurrent* set. The default value is 1024mA.
+
+```
+squirrel
+local current = charger.setChargeCurrent(512);
+server.log(current);
+```
 
 ### setUsbOtgCurrLim(*usbCurrLimConst*)
 
@@ -160,17 +230,39 @@ The *setUsbOtgCurrLim()* method takes one required parameter, an USB OTG current
 | MP2624_OLIM_1300mA              |
 | MP2624_OLIM_2000mA              |
 
+```
+charger.setUsbOtgCurrLim(MP2624_OLIM_500mA);
+```
+
 ### setPreChargeCurrent(*chargeCurrent*)
 
 The *setPreChargeCurrent()* method takes one required parameter, an integer *chargeCurrent*, the desired pre charge current in milliamps. Supported values range from 64mA to 1024mA in 64mA increments. All vaules will be rounded down to the closest supported value. The method returns the actual *chargeCurrent* set. The default value is 256mA.
+
+```
+squirrel
+local current = charger.setPreChargeCurrent(512);
+server.log(current);
+```
 
 ### setTerminationCurrent(*termCurr*)
 
 The *setTerminationCurrent()* method takes one required parameter, an integer *termCurr*, the desired termination current in milliamps. Supported values range from 64mA to 1024mA in 64mA increments. All vaules will be rounded down to the closest supported value. The method returns the actual *termCurr* set. The default value is 256mA.
 
-### setChargeFullVoltage(*battFullVoltage*)
+```
+squirrel
+local current = charger.setTerminationCurrent(512);
+server.log(current);
+```
 
-The *setChargeFullVoltage()* method takes one required parameter, a float *battFullVoltage*, the desired charge full voltage in volts. Supported values range from 3.48V to 4.425V in 15mV increments. All vaules will be rounded down to the closest supported value. The method returns the actual *battFullVoltage* set. The default value is 4.2V.
+### setFullVoltageCharge(*battFullVoltage*)
+
+The *setFullVoltageCharge()* method takes one required parameter, a float *battFullVoltage*, the desired charge full voltage in volts. Supported values range from 3.48V to 4.425V in 15mV increments. All vaules will be rounded down to the closest supported value. The method returns the actual *battFullVoltage* set. The default value is 4.2V.
+
+```
+squirrel
+local current = charger.setFullVoltageCharge(3.6);
+server.log(current);
+```
 
 ### setPreChargeThreshold(*preChargeThresh*)
 
@@ -181,6 +273,11 @@ The *setPreChargeThreshold()* method takes one required parameter, an pre-charge
 | MP2624_BATT_PRE_THRESH_2_8V    |
 | MP2624_BATT_PRE_THRESH_3_0V    |
 
+```
+squirrel
+charger.setPreChargeThreshold(MP2624_BATT_PRE_THRESH_2_8V);
+```
+
 ### setBatteryRechargeThreshold(*reChargeThresh*)
 
 The *setBatteryRechargeThreshold()* method takes one required parameter, an battery recharge threshold constant. The default mode is 100mV, *MP2624_BATT_RECRG_THRESH_100mV*.
@@ -190,6 +287,11 @@ The *setBatteryRechargeThreshold()* method takes one required parameter, an batt
 | MP2624_BATT_RECRG_THRESH_200mV       |
 | MP2624_BATT_RECRG_THRESH_100mV       |
 
+```
+squirrel
+charger.setBatteryRechargeThreshold(MP2624_BATT_RECRG_THRESH_200mV);
+```
+
 ### setTerminationIndicatorThresh(*termIndConst*)
 
 The *setTerminationIndicatorThresh()* method takes one required parameter, termination indicator threshold constant. The default mode is match, *MP2624_TERM_STAT_THRESH_MATCH*. Selecting *MP2624_TERM_STAT_THRESH_BEFORE* will indicate before the actual termination on START.
@@ -198,6 +300,11 @@ The *setTerminationIndicatorThresh()* method takes one required parameter, termi
 | ----------------------------------------- |
 | MP2624_TERM_STAT_THRESH_MATCH             |
 | MP2624_TERM_STAT_THRESH_BEFORE            |
+
+```
+squirrel
+charger.setTerminationIndicatorThresh(MP2624_TERM_STAT_THRESH_BEFORE);
+```
 
 ### setWatchdogTimerLimit(*timerConst*)
 
@@ -210,6 +317,11 @@ The *setWatchdogTimerLimit()* method takes one required parameter, a watchdog ti
 | MP2624_WATCHDOG_TMR_80s        |
 | MP2624_WATCHDOG_TMR_160s       |
 
+```
+squirrel
+charger.setWatchdogTimerLimit(MP2624_WATCHDOG_TMR_80s);
+```
+
 ### setConstCurrChargeTimer(*constCurrChrgTimerConst*)
 
 The *setConstCurrChargeTimer()* method takes one required parameter, a constant-current charge timer constant. The default is 5 hours, *MP2624_CONST_CHRG_TMR_5H*. **Note:** that during PPM this time will double.
@@ -221,13 +333,30 @@ The *setConstCurrChargeTimer()* method takes one required parameter, a constant-
 | MP2624_CONST_CHRG_TMR_12H               |
 | MP2624_CONST_CHRG_TMR_20H               |
 
+```
+squirrel
+charger.setConstCurrChargeTimer(MP2624_CONST_CHRG_TMR_8H);
+```
+
 ### setBattCompResistance(*resistance*)
 
 The *setBattCompResistance()* method takes one required parameter, an integer *resistance*, the desired resistance in milli-ohms. Supported values range from 0mΩ to 70mΩ in 10mΩ increments. All vaules will be rounded down to the closest supported value. The method returns the actual *resistance* set. The default value is 0mΩ.
 
+```
+squirrel
+local r = charger.setBattCompResistance(30);
+server.log(r);
+```
+
 ### setBattCompVoltClamp(*compVClamp*)
 
 The *setBattCompVoltClamp()* method takes one required parameter, an integer *compVClamp*, the desired battery compensation voltage clamp above the full battery voltage. Supported values are in millivolts and range from 0mV to 112mV in 16mV increments. All vaules will be rounded down to the closest supported value. The method returns the actual *compVClamp* set. The default value is 0mV.
+
+```
+squirrel
+local cV = charger.setBattCompVoltClamp(64);
+server.log(cV);
+```
 
 ### setThermRegulationThresh(*thermThreshConst*)
 
@@ -240,49 +369,109 @@ The *setThermRegulationThresh()* method takes one required parameter, a thermal 
 | MP2624_THERM_REG_THRESH_100_DEG_C      |
 | MP2624_THERM_REG_THRESH_120_DEG_C      |
 
+```
+squirrel
+charger.setThermRegulationThresh(MP2624_THERM_REG_THRESH_60_DEG_C);
+```
+
 ### enableChrgTermination(*enable*)
 
 The *enableChrgTermination()* method is used to enable or disable the termination setting. This method takes one required boolean parameter. By default the termination setting is enabled.
+
+```
+squirrel
+charger.enableChrgTermination(false);
+```
 
 ### enableUSBDetection(*enable*)
 
 The *enableUSBDetection()* method is used to disable or enable(force) DP/DM detection mode. This method takes one required boolean parameter. By default DP/DM detection mode is disabled.
 
+```
+squirrel
+charger.enableUSBDetection(true);
+```
+
 ### enableSafetyTimer(*enable*)
 
 The *enableSafetyTimer()* method is used to enable or disable the safety timer. This method takes one required boolean parameter. By default the safety timer is enabled.
+
+```
+squirrel
+charger.enableSafetyTimer(false);
+```
 
 ### enableExtSafetyTmr(*enable*)
 
 The *enableExtSafetyTmr()* method is used to enable or disable the 2X extended safety timer. This method takes one required boolean parameter. By default the 2x safety timer is enabled.
 
+```
+squirrel
+charger.enableExtSafetyTmr(false);
+```
+
 ### enableBatFet(*enable*)
 
 The *enableBatFet()* method is used to enable or disable the battery fet. This method takes one required boolean parameter. By default battery fet is disabled.
+
+```
+squirrel
+charger.enableBatFet(true);
+```
 
 ### enableNTC(*enable*)
 
 The *enableNTC()* method is used to enable or disable NTC. This method takes one required boolean parameter. By default NTC is enabled.
 
+```
+squirrel
+charger.enableNTC(false);
+```
+
 ### enableBattUVLO(*enable*)
 
 The *enableBattUVLO()* method is used to enable or disable battery under voltage lock out. This method takes one required boolean parameter. By default battery under voltage lock out is disabled.
+
+```
+squirrel
+charger.enableBattUVLO(true);
+```
 
 ### enableCrgFaultInt(*enable*)
 
 The *enableCrgFaultInt()* method is used to enable or disable the charge fault interrupt. This method takes one required boolean parameter. By default the interrupt is enabled.
 
+```
+squirrel
+charger.enableCrgFaultInt(false);
+```
+
 ### enableBattFaultInt(*enable*)
 
 The *enableBattFaultInt()* method is used to enable or disable the battery fault interrupt. This method takes one required boolean parameter. By default the interrupt is enabled.
+
+```
+squirrel
+charger.enableBattFaultInt(false);
+```
 
 ### enableHighImpedence(*enable*)
 
 The *enableHighImpedence()* method is used to enable or disable the high impedence pin. This method takes one required boolean parameter. By default the pin is disabled.
 
+```
+squirrel
+charger.enableHighImpedence(true);
+```
+
 ### resetWatchdogTimer()
 
 Use the *resetWatchdogTimer()* method to prevent the watchdog timer from expiring and keep the device in host mode.
+
+```
+squirrel
+charger.resetWatchdogTimer();
+```
 
 ## License
 

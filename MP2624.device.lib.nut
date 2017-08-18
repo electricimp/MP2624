@@ -139,9 +139,11 @@ class MP2624 {
     static VERSION = "1.0.0";
 
     _i2c = null;
+    _addr = null;
 
-    constructor(i2c) {
+    constructor(i2c, addr = MP2624_DEFUALT_I2C_ADDR) {
         _i2c = i2c;
+        _addr = addr;
     }
 
     // Enable/Disable High Imped - EN HIZ (**disabled)
@@ -165,16 +167,17 @@ class MP2624 {
     // Param input in volts
     // Return acutal input voltage set
     function setInputVoltageRegulation(inVoltage) {
-        local inc = 0.08;
-        local min = 3.88;
-        local max = 5.08;
-        
+        local inc = 80; 
+        local min = 3880;
+        local max = 5080;
+        inVoltage = (inVoltage * 1000).tointeger();
+
         local val = _getSettingRegVal(inVoltage, min, max, inc);
         local regVal = _getReg(MP2624_IN_SRC_CTRL_REG) & 0x87;
 
         // Set reg bits 3-6 only
-        _setReg(MP2624_IN_SRC_CTRL_REG, regVal | val);
-        return (val * inc) + min;
+        _setReg(MP2624_IN_SRC_CTRL_REG, regVal | (val << 3));
+        return ((val * inc) + min) / 1000.0;
     }
 
     // Set Input Current Limit (SDP or DCP/CDP)
@@ -190,8 +193,8 @@ class MP2624 {
     function setChargerConfig(modeConst) {
         // Set reg bits 4-5 only
         local regVal = _getReg(MP2624_PWR_ON_CONFIG_REG) & 0xCF;
-        regVal = regVal | modeConst;
-        _setReg(MP2624_IN_SRC_CTRL_REG, regVal);
+        regVal = regVal | modeConst << 4;
+        _setReg(MP2624_PWR_ON_CONFIG_REG, regVal);
         return this;
     }
 
@@ -199,16 +202,17 @@ class MP2624 {
     // Param min system voltage (in volts)
     // return acutal min sys voltage set
     function setMinSysVoltage(minSysVoltage) {
-        local inc = 0.1;
-        local min = 3.0;
-        local max = 3.7;
+        local inc = 1;
+        local min = 30;
+        local max = 37;
+        minSysVoltage = (minSysVoltage * 10).tointeger();
 
         local val = _getSettingRegVal(minSysVoltage, min, max, inc);
         local regVal = _getReg(MP2624_PWR_ON_CONFIG_REG) & 0xF1;
 
         // Set reg bits 1-3 only
-        _setReg(MP2624_IN_SRC_CTRL_REG, regVal | val);
-        return (val * inc) + min;
+        _setReg(MP2624_PWR_ON_CONFIG_REG, regVal | (val << 1));
+        return ((val * inc) + min) / 10.0;
     }
 
     // Set System Regulation Voltage Higher than Full Batt Voltage (0 50mV, 1 100mV)
@@ -229,7 +233,7 @@ class MP2624 {
         local regVal = _getReg(MP2624_CRG_CURR_CTRL_REG) & 0x03;
 
         // Set reg bits 2-7 only
-        _setReg(MP2624_CRG_CURR_CTRL_REG, regVal | val);
+        _setReg(MP2624_CRG_CURR_CTRL_REG, regVal | (val << 2));
         return (val * inc) + min;
     }
 
@@ -254,7 +258,7 @@ class MP2624 {
         local regVal = _getReg(MP2624_PRE_CRG_TERM_CURR) & 0x0F;
 
         // Set reg bits 4-7 only
-        _setReg(MP2624_PRE_CRG_TERM_CURR, regVal | val);
+        _setReg(MP2624_PRE_CRG_TERM_CURR, regVal | (val << 4));
         return (val * inc) + min;
     }
 
@@ -274,20 +278,21 @@ class MP2624 {
         return (val * inc) + min;
     }
 
-    // Charge Full Voltage, Range (3.48-4.425V) default 4.2V
+    // Full Voltage Charge, Range (3.48-4.425V) default 4.2V
     // Param Battery Full (in V)
     // return Battery Full voltage set   
-    function setChargeFullVoltage(battFull) {
-        local inc = 0.015;
-        local min = 3.48;
-        local max = 4.425;
+    function setFullVoltageCharge(battFull) {
+        local inc = 15;
+        local min = 3480;
+        local max = 4425;
+        battFull = (battFull * 1000).tointeger();
 
         local val = _getSettingRegVal(battFull, min, max, inc);
         local regVal = _getReg(MP2624_CRG_VOLT_CTRL_REG) & 0x03;
 
         // Set reg bits 2-7 only
-        _setReg(MP2624_CRG_VOLT_CTRL_REG, regVal | val);
-        return (val * inc) + min;
+        _setReg(MP2624_CRG_VOLT_CTRL_REG, regVal | (val << 2));
+        return ((val * inc) + min) / 1000.0;
     }
 
     // Set Pre Charge Voltage Threshold (0 2.8V, 1 **3.0V)
@@ -318,7 +323,7 @@ class MP2624 {
     function setWatchdogTimerLimit(timerConst) {
         // Set reg bits 4-5 only
         local regVal = _getReg(MP2624_CRG_TERM_TIMER_CTRL_REG) & 0xCF;
-        regVal = regVal | timerConst;
+        regVal = regVal | timerConst << 4;
         _setReg(MP2624_CRG_TERM_TIMER_CTRL_REG, regVal);
         return this;
     }
@@ -333,7 +338,7 @@ class MP2624 {
     function setConstCurrChargeTimer(timerConst) {
         // Set reg bits 1-2 only
         local regVal = _getReg(MP2624_CRG_TERM_TIMER_CTRL_REG) & 0xF9;
-        regVal = regVal | timerConst;
+        regVal = regVal | timerConst << 1;
         _setReg(MP2624_CRG_TERM_TIMER_CTRL_REG, regVal);
         return this;
     }
@@ -348,7 +353,7 @@ class MP2624 {
         local regVal = _getReg(MP2624_COPM_THERM_REG_CTRL_REG) & 0x1F;
 
         // Set reg bits 5-7 only
-        _setReg(MP2624_COPM_THERM_REG_CTRL_REG, regVal | val);
+        _setReg(MP2624_COPM_THERM_REG_CTRL_REG, regVal | (val << 5));
         return (val * inc) + min;
     }
 
@@ -361,8 +366,8 @@ class MP2624 {
         local val = _getSettingRegVal(compV, min, max, inc);
         local regVal = _getReg(MP2624_COPM_THERM_REG_CTRL_REG) & 0xE3;
 
-        // Set reg bits 5-7 only
-        _setReg(MP2624_COPM_THERM_REG_CTRL_REG, regVal | val);
+        // Set reg bits 2-4 only
+        _setReg(MP2624_COPM_THERM_REG_CTRL_REG, regVal | (val << 2));
         return (val * inc) + min;
     }
 
@@ -417,23 +422,23 @@ class MP2624 {
         return this;
     }
 
-    function getSystStatus() {
+    function getSysStatus() {
         local regVal = _getReg(MP2624_SYS_STATUS_REG);
-        return { "V_BUS"    : regVal && 0x3F, 
-                 "CHARGE"   : regVal && 0xCF,
-                 "PPM"      : regVal && 0xF7,
-                 "PWR_GOOD" : regVal && 0xFB,
-                 "THERM"    : regVal && 0xFD,
-                 "V_SYS"    : regVal && 0xFE };
+        return { "V_BUS"    : (regVal & 0xC0) >> 6, 
+                 "CHARGE"   : (regVal & 0x30) >> 4,
+                 "PPM"      : (regVal & 0x08) >> 3,
+                 "PWR_GOOD" : (regVal & 0x04) >> 2,
+                 "THERM"    : (regVal & 0x02) >> 1,
+                 "V_SYS"    : regVal & 0x01 };
     }
 
-    function getFault() {
+    function getFaults() {
         local regVal = _getReg(MP2624_FAULT_REG);
-        return { "WATCHDOG" : regVal && 0xEF,
-                 "OTG"      : regVal && 0xBF,
-                 "CHARGE"   : regVal && 0xCF,
-                 "BATTERY"  : regVal && 0xF7,
-                 "NTC"      : regVal && 0xF8 };
+        return { "WATCHDOG" : (regVal & 0x80) >> 7,
+                 "OTG"      : (regVal & 0x40) >> 6,
+                 "CHARGE"   : (regVal & 0x30) >> 4,
+                 "BATTERY"  : (regVal & 0x08) >> 3,
+                 "NTC"      : regVal & 0x07};
     }
 
     // Private Functions
@@ -448,13 +453,13 @@ class MP2624 {
     }
 
     function _getReg(reg) {
-        local result = _i2c.read(MP2624_DEFUALT_I2C_ADDR, reg.tochar(), 1);
+        local result = _i2c.read(_addr, reg.tochar(), 1);
         if (result == null) throw "I2C read error: " + _i2c.readerror();
         return result[0];
     }
 
     function _setReg(reg, val) {
-        local result = _i2c.write(MP2624_DEFUALT_I2C_ADDR, format("%c%c", reg, (val & 0xFF)));
+        local result = _i2c.write(_addr, format("%c%c", reg, (val & 0xFF)));
         if (result) throw "I2C write error: " + result;
         return result;
     }
