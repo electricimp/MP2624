@@ -32,9 +32,9 @@ const MP2624_CURR_IN_LIMIT_2000mA = 0x06;
 const MP2624_CURR_IN_LIMIT_3000mA = 0x07;
 
 // Charger Configuration settings
-const MP2624_CHARGE_DISABLE = 0x00;
-const MP2624_CHARGE_BATTERY = 0x01;
-const MP2624_CHARGE_OTG     = 0x02;
+const MP2624_CHARGE_MODE_DISABLE = 0x00;
+const MP2624_CHARGE_MODE_BATTERY = 0x01;
+const MP2624_CHARGE_MODE_OTG     = 0x02;
 
 // Minimum System Voltage settings
 const MP2624_SYS_MAX_50mV  = 0x00;
@@ -75,6 +75,40 @@ const MP2624_THERM_REG_THRESH_80_DEG_C  = 0x01;
 const MP2624_THERM_REG_THRESH_100_DEG_C = 0x02;
 const MP2624_THERM_REG_THRESH_120_DEG_C = 0x03;
 
+// System Status Register Msgs
+const MP2624_STATUS_V_BUS_UNKNOWN       = 0x00;
+const MP2624_STATUS_V_BUS_ADAPTOR_PORT  = 0x01;
+const MP2624_STATUS_V_BUS_USB_HOST      = 0x02;
+const MP2624_STATUS_V_BUS_OTG_INPUT     = 0x03;
+const MP2624_STATUS_CHG_NOT_CHARGING    = 0x00;
+const MP2624_STATUS_CHG_TRICKLE         = 0x01;
+const MP2624_STATUS_CHG_CONST_CURR      = 0x02;
+const MP2624_STATUS_CHG_DONE            = 0x03;
+const MP2624_STATUS_PPM_NONE            = 0x00;
+const MP2624_STATUS_PPM_VIN_IIN         = 0x01;
+const MP2624_STATUS_PG_NO_GOOD_PWR      = 0x00;
+const MP2624_STATUS_PG_PWR_GOOD         = 0x01;
+const MP2624_STATUS_THERM_NORM          = 0x00;
+const MP2624_STATUS_THERM_TH_REGULATION = 0x01;
+const MP2624_STATUS_VSYSMIN_IN_REG      = 0x00;
+const MP2624_STATUS_VSYSMIN_NOT_IN_REG  = 0x01;
+
+// Fault Register Msgs
+const MP2624_FAULT_WATCHGDOG_NORM    = 0x00;
+const MP2624_FAULT_WATCHGDOG_TMR_EXP = 0x01;
+const MP2624_FAULT_OTG_NORM          = 0x00;
+const MP2624_FAULT_OTG_VBUS__BATT    = 0x01;
+const MP2624_FAULT_CHG_NORM          = 0x00;
+const MP2624_FAULT_CHG_INPUT         = 0x01;
+const MP2624_FAULT_CHG_THERM_SD      = 0x02;
+const MP2624_FAULT_CHG_SAFTY_TMR_EXP = 0x03;
+const MP2624_FAULT_BATT_NORM         = 0x00;
+const MP2624_FAULT_BATT_BATT_OVP     = 0x01;
+const MP2624_FAULT_NTC_NORM          = 0x00;
+const MP2624_FAULT_NTC_COLD          = 0x01;
+const MP2624_FAULT_NTC_COOL          = 0x02;
+const MP2624_FAULT_NTC_WARM          = 0x03;
+const MP2624_FAULT_NTC_HOT           = 0x04;
 
 class MP2624 {
 
@@ -104,8 +138,8 @@ class MP2624 {
     }
 
     // Set Input Voltage Regulation, Range = 3.88V-5.08V, 
-    // param input in volts
-    // return acutal input voltage set
+    // Param input in volts
+    // Return acutal input voltage set
     function setInputVoltageRegulation(inVoltage) {
         local inc = 0.08;
         local min = 3.88;
@@ -219,7 +253,7 @@ class MP2624 {
     // Charge Full Voltage, Range (3.48-4.425V) default 4.2V
     // Param Battery Full (in V)
     // return Battery Full voltage set   
-    function setTerminationCurrent(battFull) {
+    function setChargeFullVoltage(battFull) {
         local inc = 0.015;
         local min = 3.48;
         local max = 4.425;
@@ -266,7 +300,7 @@ class MP2624 {
     }
 
     // Enable Safety Timer (bool - default true)
-    function enableChrgTermination(enable) {
+    function enableSafetyTimer(enable) {
         (enable) ? _setRegBit(MP2624_CRG_TERM_TIMER_CTRL_REG, 3, 1) : _setRegBit(MP2624_CRG_TERM_TIMER_CTRL_REG, 3, 0);
         return this;
     }
@@ -280,7 +314,7 @@ class MP2624 {
         return this;
     }
 
-    // default 0 ohms
+    // default 0 milli ohms
     function setBattCompResistance(resist) {
         local inc = 10;
         local min = 0;
@@ -329,8 +363,8 @@ class MP2624 {
         return this;
     }
 
-    // default enabled
-    function enableBatFetDis(enable) {
+    // check the logic in datasheet says batt FET disable, enabled by defualt
+    function enableBatFet(enable) {
         (enable) ? _setRegBit(MP2624_MISC_OP_CTRL_REG, 5, 1) : _setRegBit(MP2624_MISC_OP_CTRL_REG, 5, 0);
         return this;
     }
@@ -341,14 +375,14 @@ class MP2624 {
         return this;
     }
 
-    // default disabled
+    // check the logic in datasheet says lockout_disable, enabled by defualt
     function enableBattUVLO(enable) {
         (enable) ? _setRegBit(MP2624_MISC_OP_CTRL_REG, 2, 1) : _setRegBit(MP2624_MISC_OP_CTRL_REG, 2, 0);
         return this;
     }
 
     // default enabled
-    function enableCrgeFaultInt(enable) {
+    function enableCrgFaultInt(enable) {
         (enable) ? _setRegBit(MP2624_MISC_OP_CTRL_REG, 1, 1) : _setRegBit(MP2624_MISC_OP_CTRL_REG, 1, 0);
         return this;
     }
@@ -359,12 +393,23 @@ class MP2624 {
         return this;
     }
 
-    function getSystStatusReg() {
-
+    function getSystStatus() {
+        local regVal = _getReg(MP2624_SYS_STATUS_REG);
+        return { "V_BUS"    : regVal && 0x3F, 
+                 "CHARGE"   : regVal && 0xCF,
+                 "PPM"      : regVal && 0xF7,
+                 "PWR_GOOD" : regVal && 0xFB,
+                 "THERM"    : regVal && 0xFD,
+                 "V_SYS"    : regVal && 0xFE };
     }
 
-    function getFaultReg() {
-        
+    function getFault() {
+        local regVal = _getReg(MP2624_FAULT_REG);
+        return { "WATCHDOG" : regVal && 0xEF,
+                 "OTG"      : regVal && 0xBF,
+                 "CHARGE"   : regVal && 0xCF,
+                 "BATTERY"  : regVal && 0xF7,
+                 "NTC"      : regVal && 0xF8 };
     }
 
     // Private Functions
