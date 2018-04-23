@@ -127,9 +127,9 @@ The *getFaults()* method returns a table with the current fault status. See the 
 | ------------------------------------ | ----- | ----------- |
 | MP2624_FAULT_NTC_NORM                | 0x00  | Normal      |
 | MP2624_FAULT_NTC_COLD                | 0x01  | NTC cold    |
-| MP2624_FAULT_NTC_COOL                | 0x00  | NTC cool    |
-| MP2624_FAULT_NTC_WARM                | 0x01  | NTC warm    |
-| MP2624_FAULT_NTC_HOT                 | 0x02  | NTC hot     |
+| MP2624_FAULT_NTC_COOL                | 0x02  | NTC cool    |
+| MP2624_FAULT_NTC_WARM                | 0x03  | NTC warm    |
+| MP2624_FAULT_NTC_HOT                 | 0x04  | NTC hot     |
 
 ```squirrel
 local faults = charger.getFaults();
