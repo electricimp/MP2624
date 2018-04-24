@@ -140,7 +140,7 @@ if (faults.NTC != MP2624_FAULT_NTC_NORM) {
 
 ### setInputVoltageRegulation(*inputVoltage*)
 
-The *setInputVoltageRegulation()* method takes one required parameter, a float *inputVoltage*, the desired input voltage in volts. Supported values range from 3.88V to 5.08V in 80mV increments. All vaules will be rounded down to the closest supported value. The method returns the actual *inputVoltage* set. The default value is 4.36V. 
+The *setInputVoltageRegulation()* method takes one required parameter, a float *inputVoltage*, the desired input voltage in volts. Supported values range from 3.88V to 5.08V in 80mV increments. All values will be rounded down to the closest supported value. The method returns the actual *inputVoltage* set. The default value is 4.36V. 
 
 ```squirrel
 local inV = charger.setInputVoltageRegulation(4.04);

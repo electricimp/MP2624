@@ -24,7 +24,9 @@
 
 
 // MP2624 CONSTANTS
-const MP2624_DEFUALT_I2C_ADDR        = 0x4B;
+// Note: Data sheet states addr: 0x4B, however i2c scan 
+// on Imp discovers the device on addr: 0x96
+const MP2624_DEFUALT_I2C_ADDR        = 0x96;
 // REGISTER ADDRS
 const MP2624_IN_SRC_CTRL_REG         = 0x00;
 const MP2624_PWR_ON_CONFIG_REG       = 0x01;
