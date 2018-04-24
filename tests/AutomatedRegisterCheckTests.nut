@@ -22,15 +22,15 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 
+
 // These tests check the i2c registers are being updated as expected, it is not 
 // advisable to have a battery connected when running these tests.
-
 class AutomatedRegisterCheckTests extends ImpTestCase {
 
     charger = null;
 
     // Setup is written for an imp001 
-    // If connecting a printer this is the configuration for a (kelly) connected with a DB9 connector
+    // with MP2624 connected to i2c89
     function setUp() {
         local i2c = hardware.i2c89;
         i2c.configure(CLOCK_SPEED_100_KHZ);
@@ -78,10 +78,8 @@ class AutomatedRegisterCheckTests extends ImpTestCase {
         charger.setMinSysVoltage(3.0);
         // Default: MP2624_SYS_MAX_100mV (1)
         charger.setMaxSysVoltage(MP2624_SYS_MAX_50mV);
-        // // Default: Normal (0) - this will just toggle?
-        // charger.resetWatchdogTimer();
 
-        // Expected: 0?00 0000
+        // Expected: 0000 0000
         checkReg(0x01, 0x00);
 
         // Restore registers to defaults, confirm
